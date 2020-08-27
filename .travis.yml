@@ -16,5 +16,5 @@ after_success:
 - frauci-update-version -d=skip && export TRAVIS_TAG=$(frauci-get-version)
 env:
   global:
-  - SAUCE_USERNAME: Desire2Learn
-<%= deployInfo %>
+  - SAUCE_USERNAME=Desire2Learn
+
