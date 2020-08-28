@@ -4,9 +4,8 @@
   "repository": "https://github.com/BrightspaceUI/logging.git",
   "private": true,
   "scripts": {
-    "lint": "npm run lint:eslint && npm run lint:lit",
+    "lint": "npm run lint:eslint",
     "lint:eslint": "eslint . --ext .js,.html",
-    "lint:lit": "lit-analyzer logging.js demo test",
     "start": "es-dev-server --app-index demo/index.html --node-resolve --dedupe --open --watch",
     "test": "npm run lint && npm run test:headless",
     "test:headless": "karma start",
@@ -16,18 +15,20 @@
   "author": "D2L Corporation",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@open-wc/testing": "^2",
     "@open-wc/testing-karma": "^3",
+    "@open-wc/testing": "^2",
     "babel-eslint": "^10",
     "deepmerge": "^3",
     "es-dev-server": "^1",
-    "eslint": "^6",
     "eslint-config-brightspace": "^0.6.7",
     "eslint-plugin-html": "^6",
     "eslint-plugin-lit": "^1",
     "eslint-plugin-sort-class-members": "^1",
+    "eslint": "^6",
     "frau-ci": "^1",
-    "karma-sauce-launcher": "^2"
+    "karma-sauce-launcher": "^2",
+    "sinon": "^9.0.3"
   },
-  "dependencies": {}
+  "dependencies": {
+  }
 }
