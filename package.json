@@ -6,6 +6,7 @@
   "publishConfig": {
     "access": "public"
   },
+  "main": "index.js",
   "scripts": {
     "lint": "npm run lint:eslint",
     "lint:eslint": "eslint . --ext .js,.html",
