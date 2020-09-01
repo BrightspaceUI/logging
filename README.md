@@ -1,7 +1,7 @@
 # d2l-logging
 
 [![NPM version](https://img.shields.io/npm/v/@brightspace-ui/logging.svg)](https://www.npmjs.org/package/@brightspace-ui/logging)
-[![Build status](https://travis-ci.com/@brightspace-ui/logging.svg?branch=master)](https://travis-ci.com/@brightspace-ui/logging)
+![Build status](https://github.com/BrightspaceUI/logging/workflows/Continuous%20Integration/badge.svg)
 
 JavaScript client for sending logs to the Brightspace Logging service.
 
@@ -22,6 +22,7 @@ After cloning the repo, run `npm install` to install dependencies.
 ```shell
 # eslint
 npm run lint
+```
 
 ### Testing
 
@@ -40,8 +41,16 @@ npm run test:headless
 npm run test:headless:watch
 ```
 
+## Future Enhancements
+
+Looking for a new component or an enhancement not listed here? Create a GitHub issue!
+
 ## Versioning, Releasing & Deploying
 
-All version changes should obey [semantic versioning](https://semver.org/) rules.
+Releases use the [semantic-release](https://semantic-release.gitbook.io/) tooling and the [angular preset](https://github.com/conventional-changelog/conventional-changelog/tree/master/packages/conventional-changelog-angular) for commit message syntax. All version changes should obey [semantic versioning](https://semver.org/) rules.
 
-Include either `[increment major]`, `[increment minor]` or `[increment patch]` in your merge commit message to automatically increment the `package.json` version and create a tag.
+Upon release, the version in `package.json` is updated, a tag and GitHub release is created and a new package will be deployed to NPM.
+
+Commits prefixed with `feat` will trigger a minor release, while `fix` or `perf` will trigger a patch release. A commit containing `BREAKING CHANGE` will cause a major release to occur.
+
+Other useful prefixes that will not trigger a release: `build`, `ci`, `docs`, `refactor`, `style` and `test`. More details in the [Angular Contribution Guidelines](https://github.com/angular/angular/blob/master/CONTRIBUTING.md#type).
