@@ -1,12 +1,14 @@
 {
   "name": "@brightspace-ui/logging",
+  "version": "0.1.0",
   "description": "JavaScript client for sending logs to the Brightspace Logging service.",
   "repository": "https://github.com/BrightspaceUI/logging.git",
-  "private": true,
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
-    "lint": "npm run lint:eslint && npm run lint:lit",
+    "lint": "npm run lint:eslint",
     "lint:eslint": "eslint . --ext .js,.html",
-    "lint:lit": "lit-analyzer logging.js demo test",
     "start": "es-dev-server --app-index demo/index.html --node-resolve --dedupe --open --watch",
     "test": "npm run lint && npm run test:headless",
     "test:headless": "karma start",
@@ -16,18 +18,38 @@
   "author": "D2L Corporation",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@open-wc/testing": "^2",
     "@open-wc/testing-karma": "^3",
+    "@open-wc/testing": "^2",
+    "@semantic-release/git": "^9.0.0",
     "babel-eslint": "^10",
     "deepmerge": "^3",
     "es-dev-server": "^1",
-    "eslint": "^6",
     "eslint-config-brightspace": "^0.6.7",
     "eslint-plugin-html": "^6",
     "eslint-plugin-lit": "^1",
     "eslint-plugin-sort-class-members": "^1",
-    "frau-ci": "^1",
-    "karma-sauce-launcher": "^2"
+    "eslint": "^6",
+    "karma-sauce-launcher": "^2",
+    "semantic-release": "^17.1.1",
+    "sinon": "^9.0.3"
   },
-  "dependencies": {}
+  "dependencies": {
+  },
+  "release": {
+    "plugins": [
+      "@semantic-release/commit-analyzer",
+      "@semantic-release/github",
+      "@semantic-release/npm",
+      "@semantic-release/release-notes-generator",
+      [
+        "@semantic-release/git",
+        {
+          "assets": [
+            "package.json"
+          ],
+          "message": "chore(release): ${nextRelease.version} [skip ci]"
+        }
+      ]
+    ]
+  }
 }
