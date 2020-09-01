@@ -43,7 +43,7 @@ npm run test:headless:watch
 
 ## Future Enhancements
 
-Looking for a new component or an enhancement not listed here? Create a GitHub issue!
+Looking for an enhancement not listed here? Create a GitHub issue!
 
 ## Versioning, Releasing & Deploying
 
