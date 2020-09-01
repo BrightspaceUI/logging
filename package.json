@@ -1,6 +1,6 @@
 {
   "name": "@brightspace-ui/logging",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "JavaScript client for sending logs to the Brightspace Logging service.",
   "repository": "https://github.com/BrightspaceUI/logging.git",
   "publishConfig": {
@@ -34,8 +34,7 @@
     "semantic-release": "^17.1.1",
     "sinon": "^9.0.3"
   },
-  "dependencies": {
-  },
+  "dependencies": {},
   "release": {
     "plugins": [
       "@semantic-release/commit-analyzer",
