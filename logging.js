@@ -1,6 +1,8 @@
 
 const _isFiniteNumber = (val) => val !== null && isFinite(val) && !isNaN(val);
 
+const dataLoggingEndpointAttribute = 'data-logging-endpoint';
+
 export class ServerLogger {
 
 	constructor(batchSize, batchTime) {
@@ -12,7 +14,7 @@ export class ServerLogger {
 
 	logBatch(logs) {
 		clearTimeout(this._batchTimeout);
-		this._loggerPromise = this._loggerPromise || D2L.Logging.GetLogger(false);
+		this._loggerPromise = this._loggerPromise || this._provisionLoggerEndpoint(false);
 		this._logs = [...this._logs, ...logs];
 		while (this._logs.length >= this._batchSize) {
 			const batch = this._logs.slice(0, this._batchSize);
@@ -34,14 +36,18 @@ export class ServerLogger {
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify(logs)
 		};
-		let logger = await this._loggerPromise;
-		const resp = await window.fetch(logger.Endpoint, options);
-		if (resp.status === 410) {
-			// endpoint has expired so force refresh
-			this._loggerPromise = D2L.Logging.GetLogger(true);
-			logger = await this._loggerPromise;
-			options = { ...options, mode: 'no-cors' };
-			window.fetch(logger.Endpoint, options);
+		try {
+			let logger = await this._loggerPromise;
+			const resp = await window.fetch(logger.Endpoint, options);
+			if (resp.status === 410) {
+				// endpoint has expired so force refresh
+				this._loggerPromise = this._provisionLoggerEndpoint(true);
+				logger = await this._loggerPromise;
+				options = { ...options, mode: 'no-cors' };
+				window.fetch(logger.Endpoint, options);
+			}
+		} catch (err) {
+			console.error(err, logs);
 		}
 	}
 
@@ -50,11 +56,28 @@ export class ServerLogger {
 		if (!this._loggerPromise && !navigator || !navigator.sendBeacon) {
 			return;
 		}
-		const logger = await this._loggerPromise;
 		if (this._logs.length > 0) {
-			const data = JSON.stringify(this._logs);
-			navigator.sendBeacon(logger.Endpoint, data);
+			try {
+				const logger = await this._loggerPromise;
+				const data = JSON.stringify(this._logs);
+				navigator.sendBeacon(logger.Endpoint, data);
+			} catch (err) {
+				console.error(err, this._logs);
+			}
 		}
+	}
+
+	async _provisionLoggerEndpoint(reload) {
+		const htmlEle = document.getElementsByTagName('html')[0];
+		if (!htmlEle) {
+			throw new Error(`Failed to locate top-level HTML element for ${dataLoggingEndpointAttribute}`);
+		}
+		const provisionEndpoint = htmlEle.getAttribute(dataLoggingEndpointAttribute);
+		if (!provisionEndpoint) {
+			throw new Error(`Missing ${dataLoggingEndpointAttribute} attribute on top-level HTML element`);
+		}
+		const response = await window.fetch(provisionEndpoint, reload ? { cache: 'reload' } : {});
+		return response.json();
 	}
 }
 

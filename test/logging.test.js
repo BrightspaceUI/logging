@@ -283,31 +283,34 @@ describe('logging', () => {
 
 		let logger;
 		let batchTime;
+		let provisioningEndpoint;
+		let fetchStub;
 
 		beforeEach(() => {
-			let callCount = 0;
-			window.D2L = window.D2L || {}; window.D2L.Logging = window.D2L.Logging || {};
-			window.D2L.Logging.GetLogger = (reload) => {
-				if (reload) {
-					callCount += 1;
-				}
-				return Promise.resolve({ Endpoint: `/test/endpoint/${callCount}` });
-			};
 
 			batchTime = 150;
 			logger = new ServerLogger(3, batchTime);
+
+			provisioningEndpoint = '/test/provisioning/endpoint';
+			const htmlEle = document.getElementsByTagName('html')[0];
+			htmlEle.setAttribute('data-logging-endpoint', provisioningEndpoint);
+
+			fetchStub = sinon.stub(window, 'fetch');
+
+			let callCount = 0;
+			fetchStub.withArgs(provisioningEndpoint).resolves({
+				json: () => Promise.resolve({ Endpoint: `/test/endpoint/${callCount++}` })
+			});
+		});
+
+		afterEach(() => {
+			fetchStub.restore();
 		});
 
 		describe('batching', () => {
-			let fetchStub;
 
 			beforeEach(() => {
-				fetchStub = sinon.stub(window, 'fetch');
 				fetchStub.resolves({ ok: true });
-			});
-
-			afterEach(() => {
-				fetchStub.restore();
 			});
 
 			it('should log immediately when batch size is reached', async() => {
@@ -316,8 +319,8 @@ describe('logging', () => {
 				logger.logBatch([{ message: '3' }]);
 
 				await aTimeout(0);
-				expect(fetchStub).to.have.been.calledOnce;
-				const options = fetchStub.getCall(0).args[1];
+				expect(fetchStub).to.have.been.calledTwice;
+				const options = fetchStub.getCall(1).args[1];
 				expect(options.body).to.equal(JSON.stringify([{ message: '1' }, { message: '2' }, { message: '3' }]));
 			});
 
@@ -327,8 +330,8 @@ describe('logging', () => {
 
 				await aTimeout(batchTime);
 				await aTimeout(0);
-				expect(fetchStub).to.have.been.calledOnce;
-				const options = fetchStub.getCall(0).args[1];
+				expect(fetchStub).to.have.been.calledTwice;
+				const options = fetchStub.getCall(1).args[1];
 				expect(options.body).to.equal(JSON.stringify([{ message: '1' }, { message: '2' }]));
 			});
 
@@ -338,10 +341,10 @@ describe('logging', () => {
 				logger.logBatch([{ message: '3' }, { message: '4' }, { message: '5' }, { message: '6' }, { message: '7' }, { message: '8' }, { message: '9' }]);
 
 				await aTimeout(0);
-				expect(fetchStub).to.have.been.calledThrice;
+				expect(fetchStub).to.have.been.callCount(4);
 
 				for (let i = 0; i < 3; i += 1) {
-					const options = fetchStub.getCall(i).args[1];
+					const options = fetchStub.getCall(i + 1).args[1];
 					expect(options.body).to.equal(JSON.stringify([{ message: `${3 * i + 1}` }, { message: `${3 * i + 2}` }, { message: `${3 * i + 3}` }]));
 				}
 			});
@@ -352,56 +355,47 @@ describe('logging', () => {
 				logger.logBatch([{ message: '3' }, { message: '4' }]);
 
 				await aTimeout(0);
-				expect(fetchStub).to.have.been.calledOnce;
-				const options1 = fetchStub.getCall(0).args[1];
+				expect(fetchStub).to.have.been.calledTwice;
+				const options1 = fetchStub.getCall(1).args[1];
 				expect(options1.body).to.equal(JSON.stringify([{ message: '1' }, { message: '2' }, { message: '3' }]));
 
 				await aTimeout(batchTime);
 				await aTimeout(0);
-				expect(fetchStub).to.have.been.calledTwice;
-				const options2 = fetchStub.getCall(1).args[1];
+				expect(fetchStub).to.have.been.calledThrice;
+				const options2 = fetchStub.getCall(2).args[1];
 				expect(options2.body).to.equal(JSON.stringify([{ message: '4' }]));
 			});
 
 		});
 
 		describe('endpoint expiration', () => {
-			let fetchStub;
-
-			beforeEach(() => {
-				fetchStub = sinon.stub(window, 'fetch');
-			});
-
-			afterEach(() => {
-				fetchStub.restore();
-			});
 
 			it('should not refresh the endpoint if fetch succeeds', async() => {
 
-				fetchStub.resolves({ ok: true });
-
-				logger.logBatch([{ message: '1' }, { message: '2' }, { message: '3' }]);
-
-				await aTimeout(0);
-				expect(fetchStub).to.have.been.calledOnce;
-			});
-
-			it('should refresh the endpoint if fetch fails with gone', async() => {
-
-				fetchStub.onCall(0).resolves({ status: 410 });
 				fetchStub.onCall(1).resolves({ ok: true });
 
 				logger.logBatch([{ message: '1' }, { message: '2' }, { message: '3' }]);
 
 				await aTimeout(0);
 				expect(fetchStub).to.have.been.calledTwice;
+			});
 
-				const [endpoint1, options1] = fetchStub.getCall(0).args;
+			it('should refresh the endpoint if fetch fails with gone', async() => {
+
+				fetchStub.onCall(1).resolves({ status: 410 });
+				fetchStub.onCall(3).resolves({ ok: true });
+
+				logger.logBatch([{ message: '1' }, { message: '2' }, { message: '3' }]);
+
+				await aTimeout(0);
+				expect(fetchStub).to.have.been.callCount(4);
+
+				const [endpoint1, options1] = fetchStub.getCall(1).args;
 				expect(endpoint1).to.equal('/test/endpoint/0');
 				expect(options1.body).to.equal(JSON.stringify([{ message: '1' }, { message: '2' }, { message: '3' }]));
 				expect(options1.mode).to.equal('cors');
 
-				const [endpoint2, options2] = fetchStub.getCall(1).args;
+				const [endpoint2, options2] = fetchStub.getCall(3).args;
 				expect(endpoint2).to.equal('/test/endpoint/1');
 				expect(options2.body).to.equal(JSON.stringify([{ message: '1' }, { message: '2' }, { message: '3' }]));
 				expect(options2.mode).to.equal('no-cors');
@@ -414,14 +408,14 @@ describe('logging', () => {
 				logger.logBatch([{ message: '1' }, { message: '2' }, { message: '3' }]);
 
 				await aTimeout(0);
-				expect(fetchStub).to.have.been.calledTwice;
+				expect(fetchStub).to.have.been.callCount(4);
 
-				const [endpoint1, options1] = fetchStub.getCall(0).args;
+				const [endpoint1, options1] = fetchStub.getCall(1).args;
 				expect(endpoint1).to.equal('/test/endpoint/0');
 				expect(options1.body).to.equal(JSON.stringify([{ message: '1' }, { message: '2' }, { message: '3' }]));
 				expect(options1.mode).to.equal('cors');
 
-				const [endpoint2, options2] = fetchStub.getCall(1).args;
+				const [endpoint2, options2] = fetchStub.getCall(3).args;
 				expect(endpoint2).to.equal('/test/endpoint/1');
 				expect(options2.body).to.equal(JSON.stringify([{ message: '1' }, { message: '2' }, { message: '3' }]));
 				expect(options2.mode).to.equal('no-cors');
