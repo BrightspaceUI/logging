@@ -86,6 +86,13 @@ export class LogBuilder {
 		this._log = { appId: String(appId) };
 	}
 
+	withLocation() {
+		if (window.location && window.location.href) {
+			this._log.location = String(window.location.href);
+		}
+		return this;
+	}
+
 	withError(error) {
 		if (!error || !(error instanceof Error)) {
 			return this;
@@ -162,6 +169,7 @@ export class LoggingClient {
 	logBatch(developerMessages) {
 		const logs = developerMessages.map(developerMessage => new LogBuilder(this._appId)
 			.withMessage(developerMessage)
+			.withLocation()
 			.build());
 		this._logger.logBatch(logs);
 	}
@@ -174,6 +182,7 @@ export class LoggingClient {
 		const logs = errors.map(({ error, developerMessage }) => new LogBuilder(this._appId)
 			.withError(error)
 			.withMessage(developerMessage)
+			.withLocation()
 			.build());
 		this._logger.logBatch(logs);
 	}
@@ -187,6 +196,7 @@ export class LoggingClient {
 			.withLegacyError(message, source, lineno, colno)
 			.withError(error)
 			.withMessage(developerMessage)
+			.withLocation()
 			.build());
 		this._logger.logBatch(logs);
 	}

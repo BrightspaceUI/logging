@@ -19,6 +19,14 @@ describe('logging', () => {
 			});
 		});
 
+		describe('location', () => {
+
+			it('should include location', () => {
+				const log = new LogBuilder('my-app-id').withLocation().build();
+				expect(log.location).to.not.be.empty;
+			});
+		});
+
 		describe('message', () => {
 
 			it('should not include message by default', () => {
