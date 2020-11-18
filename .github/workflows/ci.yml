@@ -1,12 +1,5 @@
 name: Continuous Integration
-
-on:
-  push:
-    branches:
-      - master
-  pull_request:
-    types: [opened, reopened, synchronize]
-
+on: pull_request
 jobs:
   ci:
     name: Continuous Integration
@@ -20,17 +13,7 @@ jobs:
       - name: Lint
         run: npm run lint
       - name: Unit Tests (Sauce)
-        if: ${{ github.event_name == 'pull_request' }}
         env:
-          SAUCE_USERNAME: ${{ secrets.SAUCE_USERNAME }}
+          SAUCE_USERNAME: Gaudi1
           SAUCE_ACCESS_KEY: ${{ secrets.SAUCE_ACCESS_KEY }}
         run: npm run test:sauce
-      - name: Unit Tests (headless)
-        if: ${{ github.event_name != 'pull_request' }}
-        run: npm run test:headless
-      - name: Release
-        if: ${{ github.event_name == 'push' }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npx semantic-release
