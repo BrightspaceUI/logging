@@ -1,7 +1,6 @@
 # d2l-logging
 
 [![NPM version](https://img.shields.io/npm/v/@brightspace-ui/logging.svg)](https://www.npmjs.org/package/@brightspace-ui/logging)
-![Build status](https://github.com/BrightspaceUI/logging/workflows/Continuous%20Integration/badge.svg)
 
 JavaScript client for sending logs to the Brightspace Logging service.
 
