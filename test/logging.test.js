@@ -123,7 +123,7 @@ describe('logging', () => {
 						done();
 					}
 				};
-				const client = new LoggingClient('my-app-id', mockLogger);
+				const client = new LoggingClient('my-app-id', false, mockLogger);
 				client.log('this is my message I want to log');
 			});
 
@@ -143,7 +143,7 @@ describe('logging', () => {
 						done();
 					}
 				};
-				const client = new LoggingClient('my-app-id', mockLogger);
+				const client = new LoggingClient('my-app-id', false, mockLogger);
 				client.logBatch(messages);
 			});
 
@@ -173,7 +173,7 @@ describe('logging', () => {
 						done();
 					}
 				};
-				const client = new LoggingClient('my-app-id', mockLogger);
+				const client = new LoggingClient('my-app-id', false, mockLogger);
 				client.error(error, message);
 			});
 
@@ -205,7 +205,7 @@ describe('logging', () => {
 						done();
 					}
 				};
-				const client = new LoggingClient('my-app-id', mockLogger);
+				const client = new LoggingClient('my-app-id', false, mockLogger);
 				client.errorBatch(errors);
 			});
 
@@ -244,7 +244,7 @@ describe('logging', () => {
 						done();
 					}
 				};
-				const client = new LoggingClient('my-app-id', mockLogger);
+				const client = new LoggingClient('my-app-id', false, mockLogger);
 				client.legacyError(message, source, lineno, colno, error, developerMessage);
 			});
 
@@ -280,7 +280,7 @@ describe('logging', () => {
 						done();
 					}
 				};
-				const client = new LoggingClient('my-app-id', mockLogger);
+				const client = new LoggingClient('my-app-id', false, mockLogger);
 				client.legacyErrorBatch(legacyErrors);
 			});
 
