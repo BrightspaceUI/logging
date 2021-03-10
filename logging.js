@@ -157,9 +157,12 @@ export class LogBuilder {
 }
 
 export class LoggingClient {
-	constructor(appId, logger) {
+	constructor(appId, shouldThrottle, logger) {
 		this._appId = appId;
+		this._shouldThrottle = !!shouldThrottle;
 		this._logger = logger;
+
+		this._uniqueLogs = new Map();
 	}
 
 	log(developerMessage) {
@@ -167,7 +170,9 @@ export class LoggingClient {
 	}
 
 	logBatch(developerMessages) {
-		const logs = developerMessages.map(developerMessage => new LogBuilder(this._appId)
+		const remainingDeveloperMessages = this._throttle(developerMessages);
+
+		const logs = remainingDeveloperMessages.map(developerMessage => new LogBuilder(this._appId)
 			.withMessage(developerMessage)
 			.withLocation()
 			.build());
@@ -179,7 +184,9 @@ export class LoggingClient {
 	}
 
 	errorBatch(errors) {
-		const logs = errors.map(({ error, developerMessage }) => new LogBuilder(this._appId)
+		const remainingErrors = this._throttle(errors);
+
+		const logs = remainingErrors.map(({ error, developerMessage }) => new LogBuilder(this._appId)
 			.withError(error)
 			.withMessage(developerMessage)
 			.withLocation()
@@ -192,12 +199,32 @@ export class LoggingClient {
 	}
 
 	legacyErrorBatch(legacyErrors) {
-		const logs = legacyErrors.map(({ message, source, lineno, colno, error, developerMessage }) => new LogBuilder(this._appId)
+		const remainingLegacyErrors = this._throttle(legacyErrors);
+
+		const logs = remainingLegacyErrors.map(({ message, source, lineno, colno, error, developerMessage }) => new LogBuilder(this._appId)
 			.withLegacyError(message, source, lineno, colno)
 			.withError(error)
 			.withMessage(developerMessage)
 			.withLocation()
 			.build());
 		this._logger.logBatch(logs);
+	}
+
+	_throttle(logs) {
+		if (!this._shouldThrottle) {
+			return logs;
+		}
+
+		const now = new Date().getTime();
+		return logs.filter((log) => {
+			const key = JSON.stringify(log);
+			const lastLogged = this._uniqueLogs.get(key);
+			if (lastLogged === undefined || now - lastLogged >= 60000) {
+				this._uniqueLogs.set(key, now);
+				return true;
+			} else {
+				return false;
+			}
+		});
 	}
 }
