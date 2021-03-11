@@ -2,6 +2,9 @@ import { aTimeout, expect } from '@open-wc/testing';
 import { LogBuilder, LoggingClient, ServerLogger } from '../logging.js';
 import sinon from 'sinon';
 
+const defaultThrottleRateMs = 60000;
+let clock;
+
 describe('logging', () => {
 
 	describe('LogBuilder', () => {
@@ -301,6 +304,330 @@ describe('logging', () => {
 		});
 
 		describe('Throttling On', () => {
+
+			beforeEach(() => {
+				clock = sinon.useFakeTimers();
+			});
+			afterEach(() => {
+				clock.restore();
+			});
+
+			describe('log', () => {
+
+				it('should log new message', (done) => {
+					const mockLogger = {
+						logBatch: (logs) => {
+							expect(logs.length).to.equal(1);
+
+							const log = logs[0];
+							expect(log.appId).to.equal('my-app-id');
+							expect(log.message).to.equal('this is my message I want to log');
+
+							expect(client._uniqueLogs.size).to.equal(1);
+							done();
+						}
+					};
+					const client = new LoggingClient('my-app-id', mockLogger, { shouldThrottle: true });
+					client.log('this is my message I want to log');
+				});
+
+				it('should log identical message only once per throttle rate', () => {
+					const stub = sinon.stub();
+					const mockLogger = {
+						logBatch: stub
+					};
+					const client = new LoggingClient('my-app-id', mockLogger, { shouldThrottle: true });
+					client.log('this is my message I want to log');
+					client.log('this is my message I want to log'); // Should not be logged
+
+					expect(client._uniqueLogs.size).to.equal(1);
+					expect(stub.calledOnce).to.be.true;
+				});
+
+				it('should log identical message again after throttle rate has passed', () => {
+					let messageKey, timeValue;
+					const stub = sinon.stub();
+					const mockLogger = {
+						logBatch: stub
+					};
+					const client = new LoggingClient('my-app-id', mockLogger, { shouldThrottle: true });
+					client.log('this is my message I want to log');
+					expect(client._uniqueLogs.size).to.equal(1);
+					client._uniqueLogs.forEach((value, key) => {
+						messageKey = key;
+						timeValue = value;
+					});
+
+					clock.tick(defaultThrottleRateMs);
+					client.log('this is my message I want to log');
+
+					expect(client._uniqueLogs.size).to.equal(1);
+					const newTime = client._uniqueLogs.get(messageKey);
+					expect(newTime).to.be.at.least(timeValue + defaultThrottleRateMs);
+					expect(stub.calledTwice).to.be.true;
+				});
+
+				it('should throttle log message batch', () => {
+					const messages = ['this is my message I want to log', 'second message', 'this is my message I want to log'];
+					const checkLogs = function(logs) {
+						expect(logs.length).to.equal(messages.length - 1); // should not log third message
+
+						for (let i = 0; i < logs.length; i += 1) {
+							const log = logs[i];
+							const message = messages[i];
+							expect(log.appId).to.equal('my-app-id');
+							expect(log.message).to.equal(message);
+						}
+					};
+					const spy = sinon.spy(checkLogs);
+					const mockLogger = {
+						logBatch: spy
+					};
+					const client = new LoggingClient('my-app-id', mockLogger, { shouldThrottle: true });
+					client.logBatch(messages);
+					client.logBatch(messages); // None of these should be logged
+
+					expect(client._uniqueLogs.size).to.equal(2);
+					expect(spy.calledOnce).to.be.true;
+				});
+
+			});
+
+			describe('error', () => {
+
+				it('should log new error', (done) => {
+					const error = new Error('An error occurred');
+					const message = 'My custom message to go along with it';
+					const mockLogger = {
+						logBatch: (logs) => {
+							expect(logs.length).to.equal(1);
+
+							const log = logs[0];
+							expect(log.appId).to.equal('my-app-id');
+							expect(log.message).to.equal(message);
+							expect(log.error.name).to.equal(error.name);
+							expect(log.error.message).to.equal(error.message);
+							expect(log.error.fileName).to.equal(error.fileName);
+							expect(log.error.description).to.equal(error.description);
+							expect(log.error.number).to.equal(error.number);
+							expect(log.error.lineNumber).to.equal(error.lineNumber);
+							expect(log.error.columnNumber).to.equal(error.columnNumber);
+							expect(log.error.stack).to.equal(error.stack);
+
+							expect(client._uniqueLogs.size).to.equal(1);
+							done();
+						}
+					};
+					const client = new LoggingClient('my-app-id', mockLogger, { shouldThrottle: true });
+					client.error(error, message);
+				});
+
+				it('should log identical error only once per throttle rate', () => {
+					const error = new Error('An error occurred');
+					const message = 'My custom message to go along with it';
+					const stub = sinon.stub();
+					const mockLogger = {
+						logBatch: stub
+					};
+					const client = new LoggingClient('my-app-id', mockLogger, { shouldThrottle: true });
+					client.error(error, message);
+					client.error(error, message); // Should not be logged
+
+					expect(client._uniqueLogs.size).to.equal(1);
+					expect(stub.calledOnce).to.be.true;
+				});
+
+				it('should log identical error again after throttle rate has passed', () => {
+					let messageKey, timeValue;
+					const error = new Error('An error occurred');
+					const message = 'My custom message to go along with it';
+					const stub = sinon.stub();
+					const mockLogger = {
+						logBatch: stub
+					};
+					const client = new LoggingClient('my-app-id', mockLogger, { shouldThrottle: true });
+					client.error(error, message);
+					expect(client._uniqueLogs.size).to.equal(1);
+					client._uniqueLogs.forEach((value, key) => {
+						messageKey = key;
+						timeValue = value;
+					});
+
+					clock.tick(defaultThrottleRateMs);
+					client.error(error, message);
+
+					expect(client._uniqueLogs.size).to.equal(1);
+					const newTime = client._uniqueLogs.get(messageKey);
+					expect(newTime).to.be.at.least(timeValue + defaultThrottleRateMs);
+					expect(stub.calledTwice).to.be.true;
+				});
+
+				it('should throttle error batch', () => {
+					const errors = [
+						{ error: new Error('First error occurred'), developerMessage: 'My first message' },
+						{ error: new Error('Second error occurred'), developerMessage: 'My second message' }
+					];
+					errors.push(errors[0]);
+					const checkLogs = function(logs) {
+						expect(logs.length).to.equal(errors.length - 1); // should not log third error
+
+						for (let i = 0; i < logs.length; i += 1) {
+							const log = logs[i];
+							const { error, developerMessage } = errors[i];
+							expect(log.appId).to.equal('my-app-id');
+							expect(log.message).to.equal(developerMessage);
+							expect(log.error.name).to.equal(error.name);
+							expect(log.error.message).to.equal(error.message);
+							expect(log.error.fileName).to.equal(error.fileName);
+							expect(log.error.description).to.equal(error.description);
+							expect(log.error.number).to.equal(error.number);
+							expect(log.error.lineNumber).to.equal(error.lineNumber);
+							expect(log.error.columnNumber).to.equal(error.columnNumber);
+							expect(log.error.stack).to.equal(error.stack);
+						}
+					};
+					const spy = sinon.spy(checkLogs);
+					const mockLogger = {
+						logBatch: spy
+					};
+					const client = new LoggingClient('my-app-id', mockLogger, { shouldThrottle: true });
+					client.errorBatch(errors);
+					client.errorBatch(errors); // None of these should be logged
+
+					expect(client._uniqueLogs.size).to.equal(2);
+					expect(spy.calledOnce).to.be.true;
+				});
+
+			});
+
+			describe('legacy error', () => {
+
+				it('should log new legacy error', (done) => {
+					const message = 'The error message';
+					const source = 'logging.js';
+					const lineno = 102;
+					const colno = 23;
+					const error = new Error('An error occurred');
+					const developerMessage = 'My custom message to go along with it';
+
+					const mockLogger = {
+						logBatch: (logs) => {
+							expect(logs.length).to.equal(1);
+
+							const log = logs[0];
+							expect(log.appId).to.equal('my-app-id');
+							expect(log.message).to.equal(developerMessage);
+							expect(log.legacyError.message).to.equal(message);
+							expect(log.legacyError.source).to.equal(source);
+							expect(log.legacyError.lineno).to.equal(lineno);
+							expect(log.legacyError.colno).to.equal(colno);
+							expect(log.error.name).to.equal(error.name);
+							expect(log.error.message).to.equal(error.message);
+							expect(log.error.fileName).to.equal(error.fileName);
+							expect(log.error.description).to.equal(error.description);
+							expect(log.error.number).to.equal(error.number);
+							expect(log.error.lineNumber).to.equal(error.lineNumber);
+							expect(log.error.columnNumber).to.equal(error.columnNumber);
+							expect(log.error.stack).to.equal(error.stack);
+
+							expect(client._uniqueLogs.size).to.equal(1);
+							done();
+						}
+					};
+					const client = new LoggingClient('my-app-id', mockLogger, { shouldThrottle: true });
+					client.legacyError(message, source, lineno, colno, error, developerMessage);
+				});
+
+				it('should log identical legacy error only once per throttle rate', () => {
+					const message = 'The error message';
+					const source = 'logging.js';
+					const lineno = 102;
+					const colno = 23;
+					const error = new Error('An error occurred');
+					const developerMessage = 'My custom message to go along with it';
+
+					const stub = sinon.stub();
+					const mockLogger = {
+						logBatch: stub
+					};
+					const client = new LoggingClient('my-app-id', mockLogger, { shouldThrottle: true });
+					client.legacyError(message, source, lineno, colno, error, developerMessage);
+					client.legacyError(message, source, lineno, colno, error, developerMessage); // Should not be logged
+
+					expect(client._uniqueLogs.size).to.equal(1);
+					expect(stub.calledOnce).to.be.true;
+				});
+
+				it('should log identical legacy error again after throttle rate has passed', () => {
+					let messageKey, timeValue;
+					const message = 'The error message';
+					const source = 'logging.js';
+					const lineno = 102;
+					const colno = 23;
+					const error = new Error('An error occurred');
+					const developerMessage = 'My custom message to go along with it';
+
+					const stub = sinon.stub();
+					const mockLogger = {
+						logBatch: stub
+					};
+					const client = new LoggingClient('my-app-id', mockLogger, { shouldThrottle: true });
+					client.legacyError(message, source, lineno, colno, error, developerMessage);
+					expect(client._uniqueLogs.size).to.equal(1);
+					client._uniqueLogs.forEach((value, key) => {
+						messageKey = key;
+						timeValue = value;
+					});
+
+					clock.tick(defaultThrottleRateMs);
+					client.legacyError(message, source, lineno, colno, error, developerMessage);
+
+					expect(client._uniqueLogs.size).to.equal(1);
+					const newTime = client._uniqueLogs.get(messageKey);
+					expect(newTime).to.be.at.least(timeValue + defaultThrottleRateMs);
+					expect(stub.calledTwice).to.be.true;
+				});
+
+				it('should throttle legacy error batch', () => {
+					const legacyErrors = [
+						{ message: 'First error message', source: 'logging.js', lineno: 102, colno: 23, error: new Error('First error occurred'), developerMessage: 'My first message' },
+						{ message: 'Second error message', source: 'logging.js', lineno: 45, colno: 12, error: new Error('Second error occurred'), developerMessage: 'My second message' }
+					];
+					legacyErrors.push(legacyErrors[0]);
+					const checkLogs = function(logs) {
+						expect(logs.length).to.equal(legacyErrors.length - 1); // should not log third legacy error
+
+						for (let i = 0; i < logs.length; i += 1) {
+							const log = logs[i];
+							const { message, source, lineno, colno, error, developerMessage } = legacyErrors[i];
+							expect(log.appId).to.equal('my-app-id');
+							expect(log.message).to.equal(developerMessage);
+							expect(log.legacyError.message).to.equal(message);
+							expect(log.legacyError.source).to.equal(source);
+							expect(log.legacyError.lineno).to.equal(lineno);
+							expect(log.legacyError.colno).to.equal(colno);
+							expect(log.error.name).to.equal(error.name);
+							expect(log.error.message).to.equal(error.message);
+							expect(log.error.fileName).to.equal(error.fileName);
+							expect(log.error.description).to.equal(error.description);
+							expect(log.error.number).to.equal(error.number);
+							expect(log.error.lineNumber).to.equal(error.lineNumber);
+							expect(log.error.columnNumber).to.equal(error.columnNumber);
+							expect(log.error.stack).to.equal(error.stack);
+						}
+					};
+					const spy = sinon.spy(checkLogs);
+					const mockLogger = {
+						logBatch: spy
+					};
+					const client = new LoggingClient('my-app-id', mockLogger, { shouldThrottle: true });
+					client.legacyErrorBatch(legacyErrors);
+					client.legacyErrorBatch(legacyErrors); // None of these should be logged
+
+					expect(client._uniqueLogs.size).to.equal(2);
+					expect(spy.calledOnce).to.be.true;
+				});
+			});
 
 		});
 	});
