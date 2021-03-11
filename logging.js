@@ -2,6 +2,7 @@
 const _isFiniteNumber = (val) => val !== null && isFinite(val) && !isNaN(val);
 
 const dataLoggingEndpointAttribute = 'data-logging-endpoint';
+const defaultThrottleRateMs = 60000;
 
 export class ServerLogger {
 
@@ -157,9 +158,12 @@ export class LogBuilder {
 }
 
 export class LoggingClient {
-	constructor(appId, logger) {
+	constructor(appId, logger, opts) {
 		this._appId = appId;
 		this._logger = logger;
+		this._shouldThrottle = opts ? !!opts.shouldThrottle : false;
+
+		this._uniqueLogs = new Map();
 	}
 
 	log(developerMessage) {
@@ -170,8 +174,11 @@ export class LoggingClient {
 		const logs = developerMessages.map(developerMessage => new LogBuilder(this._appId)
 			.withMessage(developerMessage)
 			.withLocation()
-			.build());
-		this._logger.logBatch(logs);
+			.build()
+		).filter(this._throttle.bind(this));
+		if (logs.length > 0) {
+			this._logger.logBatch(logs);
+		}
 	}
 
 	error(error, developerMessage) {
@@ -183,8 +190,11 @@ export class LoggingClient {
 			.withError(error)
 			.withMessage(developerMessage)
 			.withLocation()
-			.build());
-		this._logger.logBatch(logs);
+			.build()
+		).filter(this._throttle.bind(this));
+		if (logs.length > 0) {
+			this._logger.logBatch(logs);
+		}
 	}
 
 	legacyError(message, source, lineno, colno, error, developerMessage) {
@@ -197,7 +207,26 @@ export class LoggingClient {
 			.withError(error)
 			.withMessage(developerMessage)
 			.withLocation()
-			.build());
-		this._logger.logBatch(logs);
+			.build()
+		).filter(this._throttle.bind(this));
+		if (logs.length > 0) {
+			this._logger.logBatch(logs);
+		}
+	}
+
+	_throttle(log) {
+		if (!this._shouldThrottle) {
+			return true;
+		}
+
+		const now = new Date().getTime();
+		const key = JSON.stringify(log);
+		const lastLogged = this._uniqueLogs.get(key);
+		if (lastLogged === undefined || now - lastLogged >= defaultThrottleRateMs) {
+			this._uniqueLogs.set(key, now);
+			return true;
+		} else {
+			return false;
+		}
 	}
 }
