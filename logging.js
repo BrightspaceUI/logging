@@ -158,10 +158,10 @@ export class LogBuilder {
 }
 
 export class LoggingClient {
-	constructor(appId, opts, logger) {
+	constructor(appId, logger, opts) {
 		this._appId = appId;
-		this._shouldThrottle = !!opts.shouldThrottle;
 		this._logger = logger;
+		this._shouldThrottle = opts ? !!opts.shouldThrottle : false;
 
 		this._uniqueLogs = new Map();
 	}

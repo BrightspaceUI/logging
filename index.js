@@ -8,5 +8,5 @@ const batchTime = 5000;
 
 const serverLogger = new ServerLogger(batchSize, batchTime);
 export function createClient(appId, opts) {
-	return new LoggingClient(appId, opts, serverLogger);
+	return new LoggingClient(appId, serverLogger, opts);
 }
