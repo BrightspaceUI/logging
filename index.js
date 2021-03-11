@@ -7,6 +7,6 @@ const batchSize = 500;
 const batchTime = 5000;
 
 const serverLogger = new ServerLogger(batchSize, batchTime);
-export function createClient(appId, shouldThrottle) {
-	return new LoggingClient(appId, shouldThrottle, serverLogger);
+export function createClient(appId, opts) {
+	return new LoggingClient(appId, opts, serverLogger);
 }

@@ -2,6 +2,7 @@
 const _isFiniteNumber = (val) => val !== null && isFinite(val) && !isNaN(val);
 
 const dataLoggingEndpointAttribute = 'data-logging-endpoint';
+const defaultThrottleRateMs = 60000;
 
 export class ServerLogger {
 
@@ -157,9 +158,9 @@ export class LogBuilder {
 }
 
 export class LoggingClient {
-	constructor(appId, shouldThrottle, logger) {
+	constructor(appId, opts, logger) {
 		this._appId = appId;
-		this._shouldThrottle = !!shouldThrottle;
+		this._shouldThrottle = !!opts.shouldThrottle;
 		this._logger = logger;
 
 		this._uniqueLogs = new Map();
@@ -170,13 +171,14 @@ export class LoggingClient {
 	}
 
 	logBatch(developerMessages) {
-		const remainingDeveloperMessages = this._throttle(developerMessages);
-
-		const logs = remainingDeveloperMessages.map(developerMessage => new LogBuilder(this._appId)
+		const logs = developerMessages.map(developerMessage => new LogBuilder(this._appId)
 			.withMessage(developerMessage)
 			.withLocation()
-			.build());
-		this._logger.logBatch(logs);
+			.build()
+		).filter(this._throttle.bind(this));
+		if (logs.length > 0) {
+			this._logger.logBatch(logs);
+		}
 	}
 
 	error(error, developerMessage) {
@@ -184,14 +186,15 @@ export class LoggingClient {
 	}
 
 	errorBatch(errors) {
-		const remainingErrors = this._throttle(errors);
-
-		const logs = remainingErrors.map(({ error, developerMessage }) => new LogBuilder(this._appId)
+		const logs = errors.map(({ error, developerMessage }) => new LogBuilder(this._appId)
 			.withError(error)
 			.withMessage(developerMessage)
 			.withLocation()
-			.build());
-		this._logger.logBatch(logs);
+			.build()
+		).filter(this._throttle.bind(this));
+		if (logs.length > 0) {
+			this._logger.logBatch(logs);
+		}
 	}
 
 	legacyError(message, source, lineno, colno, error, developerMessage) {
@@ -199,32 +202,31 @@ export class LoggingClient {
 	}
 
 	legacyErrorBatch(legacyErrors) {
-		const remainingLegacyErrors = this._throttle(legacyErrors);
-
-		const logs = remainingLegacyErrors.map(({ message, source, lineno, colno, error, developerMessage }) => new LogBuilder(this._appId)
+		const logs = legacyErrors.map(({ message, source, lineno, colno, error, developerMessage }) => new LogBuilder(this._appId)
 			.withLegacyError(message, source, lineno, colno)
 			.withError(error)
 			.withMessage(developerMessage)
 			.withLocation()
-			.build());
-		this._logger.logBatch(logs);
+			.build()
+		).filter(this._throttle.bind(this));
+		if (logs.length > 0) {
+			this._logger.logBatch(logs);
+		}
 	}
 
-	_throttle(logs) {
+	_throttle(log) {
 		if (!this._shouldThrottle) {
-			return logs;
+			return true;
 		}
 
 		const now = new Date().getTime();
-		return logs.filter((log) => {
-			const key = JSON.stringify(log);
-			const lastLogged = this._uniqueLogs.get(key);
-			if (lastLogged === undefined || now - lastLogged >= 60000) {
-				this._uniqueLogs.set(key, now);
-				return true;
-			} else {
-				return false;
-			}
-		});
+		const key = JSON.stringify(log);
+		const lastLogged = this._uniqueLogs.get(key);
+		if (lastLogged === undefined || now - lastLogged >= defaultThrottleRateMs) {
+			this._uniqueLogs.set(key, now);
+			return true;
+		} else {
+			return false;
+		}
 	}
 }

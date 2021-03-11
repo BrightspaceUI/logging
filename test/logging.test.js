@@ -108,91 +108,65 @@ describe('logging', () => {
 
 	describe('LoggingClient', () => {
 
-		describe('log', () => {
+		describe('Throttling Off', () => {
 
-			it('should log message', (done) => {
+			describe('log', () => {
 
-				const mockLogger = {
-					logBatch: (logs) => {
-						expect(logs.length).to.equal(1);
+				it('should log message', (done) => {
 
-						const log = logs[0];
-						expect(log.appId).to.equal('my-app-id');
-						expect(log.message).to.equal('this is my message I want to log');
+					const mockLogger = {
+						logBatch: (logs) => {
+							expect(logs.length).to.equal(1);
 
-						done();
-					}
-				};
-				const client = new LoggingClient('my-app-id', false, mockLogger);
-				client.log('this is my message I want to log');
+							const log = logs[0];
+							expect(log.appId).to.equal('my-app-id');
+							expect(log.message).to.equal('this is my message I want to log');
+
+							expect(client._uniqueLogs).to.be.empty;
+							done();
+						}
+					};
+					const client = new LoggingClient('my-app-id', {}, mockLogger);
+					client.log('this is my message I want to log');
+				});
+
+				it('should log message batch', (done) => {
+
+					const messages = ['this is my message I want to log', 'second message', 'third message'];
+					const mockLogger = {
+						logBatch: (logs) => {
+							expect(logs.length).to.equal(messages.length);
+
+							for (let i = 0; i < messages.length; i += 1) {
+								const log = logs[i];
+								const message = messages[i];
+								expect(log.appId).to.equal('my-app-id');
+								expect(log.message).to.equal(message);
+							}
+
+							expect(client._uniqueLogs).to.be.empty;
+							done();
+						}
+					};
+					const client = new LoggingClient('my-app-id', {}, mockLogger);
+					client.logBatch(messages);
+				});
+
 			});
 
-			it('should log message batch', (done) => {
+			describe('error', () => {
 
-				const messages = ['this is my message I want to log', 'second message', 'third message'];
-				const mockLogger = {
-					logBatch: (logs) => {
-						expect(logs.length).to.equal(messages.length);
+				it('should log error', (done) => {
 
-						for (let i = 0; i < messages.length; i += 1) {
-							const log = logs[i];
-							const message = messages[i];
+					const error = new Error('An error occurred');
+					const message = 'My custom message to go along with it';
+					const mockLogger = {
+						logBatch: (logs) => {
+							expect(logs.length).to.equal(1);
+
+							const log = logs[0];
 							expect(log.appId).to.equal('my-app-id');
 							expect(log.message).to.equal(message);
-						}
-						done();
-					}
-				};
-				const client = new LoggingClient('my-app-id', false, mockLogger);
-				client.logBatch(messages);
-			});
-
-		});
-
-		describe('error', () => {
-
-			it('should log error', (done) => {
-
-				const error = new Error('An error occurred');
-				const message = 'My custom message to go along with it';
-				const mockLogger = {
-					logBatch: (logs) => {
-						expect(logs.length).to.equal(1);
-
-						const log = logs[0];
-						expect(log.appId).to.equal('my-app-id');
-						expect(log.message).to.equal(message);
-						expect(log.error.name).to.equal(error.name);
-						expect(log.error.message).to.equal(error.message);
-						expect(log.error.fileName).to.equal(error.fileName);
-						expect(log.error.description).to.equal(error.description);
-						expect(log.error.number).to.equal(error.number);
-						expect(log.error.lineNumber).to.equal(error.lineNumber);
-						expect(log.error.columnNumber).to.equal(error.columnNumber);
-						expect(log.error.stack).to.equal(error.stack);
-						done();
-					}
-				};
-				const client = new LoggingClient('my-app-id', false, mockLogger);
-				client.error(error, message);
-			});
-
-			it('should log error batch', (done) => {
-
-				const errors = [
-					{ error: new Error('First error occurred'), developerMessage: 'My first message' },
-					{ error: new Error('Second error occurred'), developerMessage: 'My second message' },
-					{ error: new Error('Third error occurred'), developerMessage: 'My third message' }
-				];
-				const mockLogger = {
-					logBatch: (logs) => {
-						expect(logs.length).to.equal(errors.length);
-
-						for (let i = 0; i < errors.length; i += 1) {
-							const log = logs[i];
-							const { error, developerMessage } = errors[i];
-							expect(log.appId).to.equal('my-app-id');
-							expect(log.message).to.equal(developerMessage);
 							expect(log.error.name).to.equal(error.name);
 							expect(log.error.message).to.equal(error.message);
 							expect(log.error.fileName).to.equal(error.fileName);
@@ -201,67 +175,67 @@ describe('logging', () => {
 							expect(log.error.lineNumber).to.equal(error.lineNumber);
 							expect(log.error.columnNumber).to.equal(error.columnNumber);
 							expect(log.error.stack).to.equal(error.stack);
+
+							expect(client._uniqueLogs).to.be.empty;
+							done();
 						}
-						done();
-					}
-				};
-				const client = new LoggingClient('my-app-id', false, mockLogger);
-				client.errorBatch(errors);
+					};
+					const client = new LoggingClient('my-app-id', {}, mockLogger);
+					client.error(error, message);
+				});
+
+				it('should log error batch', (done) => {
+
+					const errors = [
+						{ error: new Error('First error occurred'), developerMessage: 'My first message' },
+						{ error: new Error('Second error occurred'), developerMessage: 'My second message' },
+						{ error: new Error('Third error occurred'), developerMessage: 'My third message' }
+					];
+					const mockLogger = {
+						logBatch: (logs) => {
+							expect(logs.length).to.equal(errors.length);
+
+							for (let i = 0; i < errors.length; i += 1) {
+								const log = logs[i];
+								const { error, developerMessage } = errors[i];
+								expect(log.appId).to.equal('my-app-id');
+								expect(log.message).to.equal(developerMessage);
+								expect(log.error.name).to.equal(error.name);
+								expect(log.error.message).to.equal(error.message);
+								expect(log.error.fileName).to.equal(error.fileName);
+								expect(log.error.description).to.equal(error.description);
+								expect(log.error.number).to.equal(error.number);
+								expect(log.error.lineNumber).to.equal(error.lineNumber);
+								expect(log.error.columnNumber).to.equal(error.columnNumber);
+								expect(log.error.stack).to.equal(error.stack);
+							}
+
+							expect(client._uniqueLogs).to.be.empty;
+							done();
+						}
+					};
+					const client = new LoggingClient('my-app-id', {}, mockLogger);
+					client.errorBatch(errors);
+				});
+
 			});
 
-		});
+			describe('legacy error', () => {
 
-		describe('legacy error', () => {
+				it('should log legacy error', (done) => {
 
-			it('should log legacy error', (done) => {
+					const message = 'The error message';
+					const source = 'logging.js';
+					const lineno = 102;
+					const colno = 23;
+					const error = new Error('An error occurred');
+					const developerMessage = 'My custom message to go along with it';
 
-				const message = 'The error message';
-				const source = 'logging.js';
-				const lineno = 102;
-				const colno = 23;
-				const error = new Error('An error occurred');
-				const developerMessage = 'My custom message to go along with it';
+					const mockLogger = {
+						logBatch: (logs) => {
+							expect(logs.length).to.equal(1);
 
-				const mockLogger = {
-					logBatch: (logs) => {
-						expect(logs.length).to.equal(1);
-
-						const log = logs[0];
-						expect(log.appId).to.equal('my-app-id');
-						expect(log.message).to.equal(developerMessage);
-						expect(log.legacyError.message).to.equal(message);
-						expect(log.legacyError.source).to.equal(source);
-						expect(log.legacyError.lineno).to.equal(lineno);
-						expect(log.legacyError.colno).to.equal(colno);
-						expect(log.error.name).to.equal(error.name);
-						expect(log.error.message).to.equal(error.message);
-						expect(log.error.fileName).to.equal(error.fileName);
-						expect(log.error.description).to.equal(error.description);
-						expect(log.error.number).to.equal(error.number);
-						expect(log.error.lineNumber).to.equal(error.lineNumber);
-						expect(log.error.columnNumber).to.equal(error.columnNumber);
-						expect(log.error.stack).to.equal(error.stack);
-						done();
-					}
-				};
-				const client = new LoggingClient('my-app-id', false, mockLogger);
-				client.legacyError(message, source, lineno, colno, error, developerMessage);
-			});
-
-			it('should log legacy error batch', (done) => {
-
-				const legacyErrors = [
-					{ message: 'First error message', source: 'logging.js', lineno: 102, colno: 23, error: new Error('First error occurred'), developerMessage: 'My first message' },
-					{ message: 'Second error message', source: 'logging.js', lineno: 45, colno: 12, error: new Error('Second error occurred'), developerMessage: 'My second message' },
-					{ message: 'Third error message', source: 'logging.js', lineno: 2, colno: 19, error: new Error('Third error occurred'), developerMessage: 'My third message' },
-				];
-				const mockLogger = {
-					logBatch: (logs) => {
-						expect(logs.length).to.equal(legacyErrors.length);
-
-						for (let i = 0; i < legacyErrors.length; i += 1) {
-							const log = logs[i];
-							const { message, source, lineno, colno, error, developerMessage } = legacyErrors[i];
+							const log = logs[0];
 							expect(log.appId).to.equal('my-app-id');
 							expect(log.message).to.equal(developerMessage);
 							expect(log.legacyError.message).to.equal(message);
@@ -276,13 +250,57 @@ describe('logging', () => {
 							expect(log.error.lineNumber).to.equal(error.lineNumber);
 							expect(log.error.columnNumber).to.equal(error.columnNumber);
 							expect(log.error.stack).to.equal(error.stack);
+
+							expect(client._uniqueLogs).to.be.empty;
+							done();
 						}
-						done();
-					}
-				};
-				const client = new LoggingClient('my-app-id', false, mockLogger);
-				client.legacyErrorBatch(legacyErrors);
+					};
+					const client = new LoggingClient('my-app-id', {}, mockLogger);
+					client.legacyError(message, source, lineno, colno, error, developerMessage);
+				});
+
+				it('should log legacy error batch', (done) => {
+
+					const legacyErrors = [
+						{ message: 'First error message', source: 'logging.js', lineno: 102, colno: 23, error: new Error('First error occurred'), developerMessage: 'My first message' },
+						{ message: 'Second error message', source: 'logging.js', lineno: 45, colno: 12, error: new Error('Second error occurred'), developerMessage: 'My second message' },
+						{ message: 'Third error message', source: 'logging.js', lineno: 2, colno: 19, error: new Error('Third error occurred'), developerMessage: 'My third message' },
+					];
+					const mockLogger = {
+						logBatch: (logs) => {
+							expect(logs.length).to.equal(legacyErrors.length);
+
+							for (let i = 0; i < legacyErrors.length; i += 1) {
+								const log = logs[i];
+								const { message, source, lineno, colno, error, developerMessage } = legacyErrors[i];
+								expect(log.appId).to.equal('my-app-id');
+								expect(log.message).to.equal(developerMessage);
+								expect(log.legacyError.message).to.equal(message);
+								expect(log.legacyError.source).to.equal(source);
+								expect(log.legacyError.lineno).to.equal(lineno);
+								expect(log.legacyError.colno).to.equal(colno);
+								expect(log.error.name).to.equal(error.name);
+								expect(log.error.message).to.equal(error.message);
+								expect(log.error.fileName).to.equal(error.fileName);
+								expect(log.error.description).to.equal(error.description);
+								expect(log.error.number).to.equal(error.number);
+								expect(log.error.lineNumber).to.equal(error.lineNumber);
+								expect(log.error.columnNumber).to.equal(error.columnNumber);
+								expect(log.error.stack).to.equal(error.stack);
+							}
+
+							expect(client._uniqueLogs).to.be.empty;
+							done();
+						}
+					};
+					const client = new LoggingClient('my-app-id', {}, mockLogger);
+					client.legacyErrorBatch(legacyErrors);
+				});
+
 			});
+		});
+
+		describe('Throttling On', () => {
 
 		});
 	});
