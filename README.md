@@ -36,7 +36,6 @@ npm run lint
 npm run test:headless
 
 # debug or run a subset of local unit tests
-# then navigate to `http://localhost:9876/debug.html`
 npm run test:headless:watch
 ```
 
