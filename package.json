@@ -10,27 +10,22 @@
   "scripts": {
     "lint": "npm run lint:eslint",
     "lint:eslint": "eslint . --ext .js,.html",
-    "start": "es-dev-server --app-index demo/index.html --node-resolve --dedupe --open --watch",
     "test": "npm run lint && npm run test:headless",
-    "test:headless": "karma start",
-    "test:headless:watch": "karma start --auto-watch=true --single-run=false",
-    "test:sauce": "karma start karma.sauce.conf.js"
+    "test:headless": "web-test-runner",
+    "test:headless:watch": "web-test-runner --watch",
+    "test:sauce": "web-test-runner --config web-test-runner.sauce.config.mjs"
   },
   "author": "D2L Corporation",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@open-wc/testing-karma": "^3",
     "@open-wc/testing": "^2",
-    "@semantic-release/git": "^9.0.0",
+    "@web/test-runner": "^0.13",
     "babel-eslint": "^10",
-    "deepmerge": "^3",
-    "es-dev-server": "^1",
     "eslint-config-brightspace": "^0.6.7",
     "eslint-plugin-html": "^6",
     "eslint-plugin-lit": "^1",
     "eslint-plugin-sort-class-members": "^1",
     "eslint": "^6",
-    "karma-sauce-launcher": "^2",
     "sinon": "^9.0.3"
   },
   "dependencies": {}
