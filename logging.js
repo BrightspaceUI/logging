@@ -3,6 +3,11 @@ const _isFiniteNumber = (val) => val !== null && isFinite(val) && !isNaN(val);
 
 const dataLoggingEndpointAttribute = 'data-logging-endpoint';
 const defaultThrottleRateMs = 60000;
+export const benignErrors = new Set([
+	'Script error.',
+	'ResizeObserver loop limit exceeded',
+	'ResizeObserver loop completed with undelivered notifications.'
+]);
 
 export class ServerLogger {
 
@@ -195,7 +200,8 @@ export class LoggingClient {
 			.withMessage(developerMessage)
 			.withLocation()
 			.build()
-		).filter(this._throttle.bind(this));
+		).filter(this._filterBenign)
+			.filter(this._throttle.bind(this));
 		if (logs.length > 0) {
 			this._logger.logBatch(logs);
 		}
@@ -213,6 +219,15 @@ export class LoggingClient {
 		).filter(this._throttle.bind(this));
 		if (logs.length > 0) {
 			this._logger.logBatch(logs);
+		}
+	}
+
+	_filterBenign(log) {
+		if (log && log.legacyError && log.legacyError.message) {
+			const isBenign = benignErrors.has(log.legacyError.message);
+			return !isBenign;
+		} else {
+			return true;
 		}
 	}
 
