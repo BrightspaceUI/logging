@@ -1,5 +1,5 @@
 import { aTimeout, expect } from '@open-wc/testing';
-import { LogBuilder, LoggingClient, ServerLogger } from '../logging.js';
+import { benignErrors, LogBuilder, LoggingClient, ServerLogger } from '../logging.js';
 import sinon from 'sinon';
 
 const defaultThrottleRateMs = 60000;
@@ -249,6 +249,18 @@ describe('logging', () => {
 						}
 					});
 					client.legacyError(message, source, lineno, colno, error, developerMessage);
+				});
+
+				benignErrors.forEach((message) => {
+					it(`should not log benign legacy error "${message}"`, () => {
+						const stub = sinon.stub();
+						const client = new LoggingClient('my-app-id', {
+							logBatch: stub
+						});
+						client.legacyError(message, 'logging.js', 102, 23, new Error('An error occurred'), 'dev msg');
+						expect(client._uniqueLogs).to.be.empty;
+						expect(stub).to.not.have.been.called;
+					});
 				});
 
 				it('should log legacy error batch', (done) => {
