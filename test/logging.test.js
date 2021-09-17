@@ -116,8 +116,7 @@ describe('logging', () => {
 			describe('log', () => {
 
 				it('should log message', (done) => {
-
-					const mockLogger = {
+					const client = new LoggingClient('my-app-id', {
 						logBatch: (logs) => {
 							expect(logs.length).to.equal(1);
 
@@ -128,15 +127,13 @@ describe('logging', () => {
 							expect(client._uniqueLogs).to.be.empty;
 							done();
 						}
-					};
-					const client = new LoggingClient('my-app-id', mockLogger);
+					});
 					client.log('this is my message I want to log');
 				});
 
 				it('should log message batch', (done) => {
-
 					const messages = ['this is my message I want to log', 'second message', 'third message'];
-					const mockLogger = {
+					const client = new LoggingClient('my-app-id', {
 						logBatch: (logs) => {
 							expect(logs.length).to.equal(messages.length);
 
@@ -150,8 +147,7 @@ describe('logging', () => {
 							expect(client._uniqueLogs).to.be.empty;
 							done();
 						}
-					};
-					const client = new LoggingClient('my-app-id', mockLogger);
+					});
 					client.logBatch(messages);
 				});
 
@@ -160,10 +156,9 @@ describe('logging', () => {
 			describe('error', () => {
 
 				it('should log error', (done) => {
-
 					const error = new Error('An error occurred');
 					const message = 'My custom message to go along with it';
-					const mockLogger = {
+					const client = new LoggingClient('my-app-id', {
 						logBatch: (logs) => {
 							expect(logs.length).to.equal(1);
 
@@ -182,19 +177,17 @@ describe('logging', () => {
 							expect(client._uniqueLogs).to.be.empty;
 							done();
 						}
-					};
-					const client = new LoggingClient('my-app-id', mockLogger);
+					});
 					client.error(error, message);
 				});
 
 				it('should log error batch', (done) => {
-
 					const errors = [
 						{ error: new Error('First error occurred'), developerMessage: 'My first message' },
 						{ error: new Error('Second error occurred'), developerMessage: 'My second message' },
 						{ error: new Error('Third error occurred'), developerMessage: 'My third message' }
 					];
-					const mockLogger = {
+					const client = new LoggingClient('my-app-id', {
 						logBatch: (logs) => {
 							expect(logs.length).to.equal(errors.length);
 
@@ -216,8 +209,7 @@ describe('logging', () => {
 							expect(client._uniqueLogs).to.be.empty;
 							done();
 						}
-					};
-					const client = new LoggingClient('my-app-id', mockLogger);
+					});
 					client.errorBatch(errors);
 				});
 
@@ -226,15 +218,13 @@ describe('logging', () => {
 			describe('legacy error', () => {
 
 				it('should log legacy error', (done) => {
-
 					const message = 'The error message';
 					const source = 'logging.js';
 					const lineno = 102;
 					const colno = 23;
 					const error = new Error('An error occurred');
 					const developerMessage = 'My custom message to go along with it';
-
-					const mockLogger = {
+					const client = new LoggingClient('my-app-id', {
 						logBatch: (logs) => {
 							expect(logs.length).to.equal(1);
 
@@ -257,19 +247,17 @@ describe('logging', () => {
 							expect(client._uniqueLogs).to.be.empty;
 							done();
 						}
-					};
-					const client = new LoggingClient('my-app-id', mockLogger);
+					});
 					client.legacyError(message, source, lineno, colno, error, developerMessage);
 				});
 
 				it('should log legacy error batch', (done) => {
-
 					const legacyErrors = [
 						{ message: 'First error message', source: 'logging.js', lineno: 102, colno: 23, error: new Error('First error occurred'), developerMessage: 'My first message' },
 						{ message: 'Second error message', source: 'logging.js', lineno: 45, colno: 12, error: new Error('Second error occurred'), developerMessage: 'My second message' },
 						{ message: 'Third error message', source: 'logging.js', lineno: 2, colno: 19, error: new Error('Third error occurred'), developerMessage: 'My third message' },
 					];
-					const mockLogger = {
+					const client = new LoggingClient('my-app-id', {
 						logBatch: (logs) => {
 							expect(logs.length).to.equal(legacyErrors.length);
 
@@ -295,8 +283,7 @@ describe('logging', () => {
 							expect(client._uniqueLogs).to.be.empty;
 							done();
 						}
-					};
-					const client = new LoggingClient('my-app-id', mockLogger);
+					});
 					client.legacyErrorBatch(legacyErrors);
 				});
 
@@ -315,7 +302,7 @@ describe('logging', () => {
 			describe('log', () => {
 
 				it('should log new message', (done) => {
-					const mockLogger = {
+					const client = new LoggingClient('my-app-id', {
 						logBatch: (logs) => {
 							expect(logs.length).to.equal(1);
 
@@ -326,8 +313,7 @@ describe('logging', () => {
 							expect(client._uniqueLogs.size).to.equal(1);
 							done();
 						}
-					};
-					const client = new LoggingClient('my-app-id', mockLogger, { shouldThrottle: true });
+					}, { shouldThrottle: true });
 					client.log('this is my message I want to log');
 				});
 
@@ -398,7 +384,7 @@ describe('logging', () => {
 				it('should log new error', (done) => {
 					const error = new Error('An error occurred');
 					const message = 'My custom message to go along with it';
-					const mockLogger = {
+					const client = new LoggingClient('my-app-id', {
 						logBatch: (logs) => {
 							expect(logs.length).to.equal(1);
 
@@ -417,8 +403,7 @@ describe('logging', () => {
 							expect(client._uniqueLogs.size).to.equal(1);
 							done();
 						}
-					};
-					const client = new LoggingClient('my-app-id', mockLogger, { shouldThrottle: true });
+					}, { shouldThrottle: true });
 					client.error(error, message);
 				});
 
@@ -509,8 +494,7 @@ describe('logging', () => {
 					const colno = 23;
 					const error = new Error('An error occurred');
 					const developerMessage = 'My custom message to go along with it';
-
-					const mockLogger = {
+					const client = new LoggingClient('my-app-id', {
 						logBatch: (logs) => {
 							expect(logs.length).to.equal(1);
 
@@ -533,8 +517,7 @@ describe('logging', () => {
 							expect(client._uniqueLogs.size).to.equal(1);
 							done();
 						}
-					};
-					const client = new LoggingClient('my-app-id', mockLogger, { shouldThrottle: true });
+					}, { shouldThrottle: true });
 					client.legacyError(message, source, lineno, colno, error, developerMessage);
 				});
 

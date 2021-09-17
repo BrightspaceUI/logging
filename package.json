@@ -9,7 +9,7 @@
   "main": "index.js",
   "scripts": {
     "lint": "npm run lint:eslint",
-    "lint:eslint": "eslint . --ext .js,.html",
+    "lint:eslint": "eslint .",
     "test": "npm run lint && npm run test:headless",
     "test:headless": "web-test-runner",
     "test:headless:watch": "web-test-runner --watch",
@@ -18,15 +18,17 @@
   "author": "D2L Corporation",
   "license": "Apache-2.0",
   "devDependencies": {
+    "@babel/core": "^7",
+    "@babel/eslint-parser": "^7",
     "@open-wc/testing": "^2",
     "@web/test-runner": "^0.13",
-    "babel-eslint": "^10",
-    "eslint-config-brightspace": "^0.6.7",
+    "eslint": "^7",
+    "eslint-config-brightspace": "^0.16",
     "eslint-plugin-html": "^6",
+    "eslint-plugin-import": "^2",
     "eslint-plugin-lit": "^1",
     "eslint-plugin-sort-class-members": "^1",
-    "eslint": "^6",
-    "sinon": "^9.0.3"
+    "sinon": "^10"
   },
   "dependencies": {}
 }

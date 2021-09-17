@@ -83,15 +83,13 @@ export class ServerLogger {
 }
 
 export class LogBuilder {
+
 	constructor(appId) {
 		this._log = { appId: String(appId) };
 	}
 
-	withLocation() {
-		if (window.location && window.location.href) {
-			this._log.location = String(window.location.href);
-		}
-		return this;
+	build() {
+		return Object.freeze(this._log);
 	}
 
 	withError(error) {
@@ -143,6 +141,13 @@ export class LogBuilder {
 		return this;
 	}
 
+	withLocation() {
+		if (window.location && window.location.href) {
+			this._log.location = String(window.location.href);
+		}
+		return this;
+	}
+
 	withMessage(message) {
 		if (message instanceof Object) {
 			this._log.message = JSON.stringify(message);
@@ -152,9 +157,6 @@ export class LogBuilder {
 		return this;
 	}
 
-	build() {
-		return Object.freeze(this._log);
-	}
 }
 
 export class LoggingClient {
@@ -164,21 +166,6 @@ export class LoggingClient {
 		this._shouldThrottle = opts ? !!opts.shouldThrottle : false;
 
 		this._uniqueLogs = new Map();
-	}
-
-	log(developerMessage) {
-		this.logBatch([developerMessage]);
-	}
-
-	logBatch(developerMessages) {
-		const logs = developerMessages.map(developerMessage => new LogBuilder(this._appId)
-			.withMessage(developerMessage)
-			.withLocation()
-			.build()
-		).filter(this._throttle.bind(this));
-		if (logs.length > 0) {
-			this._logger.logBatch(logs);
-		}
 	}
 
 	error(error, developerMessage) {
@@ -205,6 +192,21 @@ export class LoggingClient {
 		const logs = legacyErrors.map(({ message, source, lineno, colno, error, developerMessage }) => new LogBuilder(this._appId)
 			.withLegacyError(message, source, lineno, colno)
 			.withError(error)
+			.withMessage(developerMessage)
+			.withLocation()
+			.build()
+		).filter(this._throttle.bind(this));
+		if (logs.length > 0) {
+			this._logger.logBatch(logs);
+		}
+	}
+
+	log(developerMessage) {
+		this.logBatch([developerMessage]);
+	}
+
+	logBatch(developerMessages) {
+		const logs = developerMessages.map(developerMessage => new LogBuilder(this._appId)
 			.withMessage(developerMessage)
 			.withLocation()
 			.build()
