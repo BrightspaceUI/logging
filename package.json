@@ -1,6 +1,6 @@
 {
   "name": "@brightspace-ui/logging",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "JavaScript client for sending logs to the Brightspace Logging service.",
   "repository": "https://github.com/BrightspaceUI/logging.git",
   "publishConfig": {
@@ -20,7 +20,7 @@
     "@babel/core": "^7",
     "@babel/eslint-parser": "^7",
     "@open-wc/testing": "^3",
-    "@web/test-runner": "^0.13",
+    "@web/test-runner": "^0.15",
     "eslint": "^8",
     "eslint-config-brightspace": "^0.19",
     "sinon": "^15"
