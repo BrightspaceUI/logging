@@ -22,7 +22,7 @@
     "@open-wc/testing": "^3",
     "@web/test-runner": "^0.15",
     "eslint": "^8",
-    "eslint-config-brightspace": "^0.19",
+    "eslint-config-brightspace": "^0.20",
     "sinon": "^15"
   },
   "dependencies": {}
