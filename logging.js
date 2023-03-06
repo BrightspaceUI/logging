@@ -1,4 +1,3 @@
-
 const _isFiniteNumber = (val) => val !== null && isFinite(val) && !isNaN(val);
 
 const dataLoggingEndpointAttribute = 'data-logging-endpoint';

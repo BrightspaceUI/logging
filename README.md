@@ -1,4 +1,4 @@
-# d2l-logging
+# @brightspace-ui/logging
 
 [![NPM version](https://img.shields.io/npm/v/@brightspace-ui/logging.svg)](https://www.npmjs.org/package/@brightspace-ui/logging)
 
@@ -26,11 +26,8 @@ npm run lint
 ### Testing
 
 ```shell
-# lint, unit test and visual-diff test
+# lint & run headless unit tests
 npm test
-
-# lint only
-npm run lint
 
 # unit tests only
 npm run test:headless
@@ -39,15 +36,11 @@ npm run test:headless
 npm run test:headless:watch
 ```
 
-## Future Enhancements
-
-Looking for an enhancement not listed here? Create a GitHub issue!
-
 ## Versioning & Releasing
 
 > TL;DR: Commits prefixed with `fix:` and `feat:` will trigger patch and minor releases when merged to `main`. Read on for more details...
 
-The [sematic-release GitHub Action](https://github.com/BrightspaceUI/actions/tree/master/semantic-release) is called from the `release.yml` GitHub Action workflow to handle version changes and releasing.
+The [semantic-release GitHub Action](https://github.com/BrightspaceUI/actions/tree/main/semantic-release) is called from the `release.yml` GitHub Action workflow to handle version changes and releasing.
 
 ### Version Changes
 

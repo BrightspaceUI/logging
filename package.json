@@ -11,24 +11,19 @@
     "lint": "npm run lint:eslint",
     "lint:eslint": "eslint .",
     "test": "npm run lint && npm run test:headless",
-    "test:headless": "web-test-runner",
-    "test:headless:watch": "web-test-runner --watch",
-    "test:sauce": "web-test-runner --config web-test-runner.sauce.config.mjs"
+    "test:headless": "web-test-runner --files \"./test/**/*.test.js\" --node-resolve",
+    "test:headless:watch": "web-test-runner --files \"./test/**/*.test.js\" --node-resolve --watch"
   },
   "author": "D2L Corporation",
   "license": "Apache-2.0",
   "devDependencies": {
     "@babel/core": "^7",
     "@babel/eslint-parser": "^7",
-    "@open-wc/testing": "^2",
+    "@open-wc/testing": "^3",
     "@web/test-runner": "^0.13",
     "eslint": "^7",
-    "eslint-config-brightspace": "^0.16",
-    "eslint-plugin-html": "^6",
-    "eslint-plugin-import": "^2",
-    "eslint-plugin-lit": "^1",
-    "eslint-plugin-sort-class-members": "^1",
-    "sinon": "^10"
+    "eslint-config-brightspace": "^0.19",
+    "sinon": "^15"
   },
   "dependencies": {}
 }
