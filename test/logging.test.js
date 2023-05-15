@@ -771,6 +771,32 @@ describe('logging', () => {
 
 		});
 
+		describe('endpoint errors', () => {
+
+			it('should not log if endpoint is missing from html element', async() => {
+				document.getElementsByTagName('html')[0].removeAttribute('data-logging-endpoint');
+				logger.logBatch([{ message: '1' }, { message: '2' }, { message: '3' }]);
+				await aTimeout(0);
+				expect(fetchStub).to.not.have.been.called;
+			});
+
+			[
+				{ name: 'undefined', value: undefined },
+				{ name: 'not a string', value: { Endpoint: true } },
+				{ name: 'empty string', value: { Endpoint: '' } }
+			].forEach((entry) => {
+				it(`should not log if endpoint is: ${entry.name}`, async() => {
+					fetchStub.withArgs(provisioningEndpoint).resolves({
+						json: () => Promise.resolve(entry.value)
+					});
+					logger.logBatch([{ message: '1' }, { message: '2' }, { message: '3' }]);
+					await aTimeout(0);
+					expect(fetchStub).to.have.been.calledOnce;
+				});
+			});
+
+		});
+
 		describe('unload', () => {
 			let beaconStub;
 

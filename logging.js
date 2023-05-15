@@ -82,7 +82,11 @@ export class ServerLogger {
 			throw new Error(`Missing ${dataLoggingEndpointAttribute} attribute on top-level HTML element`);
 		}
 		const response = await window.fetch(provisionEndpoint, reload ? { cache: 'reload' } : {});
-		return response.json();
+		const value = await response.json();
+		if (typeof value?.Endpoint !== 'string' || value?.Endpoint.length === 0) {
+			throw new Error('Logging endpoint missing or empty, logging is disabled');
+		}
+		return value;
 	}
 }
 
