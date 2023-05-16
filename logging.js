@@ -2,6 +2,8 @@ const _isFiniteNumber = (val) => val !== null && isFinite(val) && !isNaN(val);
 
 const dataLoggingEndpointAttribute = 'data-logging-endpoint';
 const defaultThrottleRateMs = 60000;
+export const MAXIMUM_LOGS_PER_TIME_SPAN = 100;
+export const MAXIMUM_LOGS_TIME_SPAN = 60 * 1000;
 export const benignErrors = new Set([
 	'Script error.',
 	'ResizeObserver loop limit exceeded',
@@ -171,6 +173,7 @@ export class LoggingClient {
 	constructor(appId, logger, opts) {
 		this._appId = appId;
 		this._logger = logger;
+		this._logHistory = [];
 		this._shouldThrottle = opts ? !!opts.shouldThrottle : false;
 
 		this._uniqueLogs = new Map();
@@ -235,11 +238,23 @@ export class LoggingClient {
 	}
 
 	_throttle(log) {
+
+		const now = Date.now();
+
+		// rate limit number of errors to 100 per minute
+		while (this._logHistory.length > 0 && this._logHistory[0] < (now - MAXIMUM_LOGS_TIME_SPAN)) {
+			this._logHistory.shift();
+		}
+		if (this._logHistory.length >= MAXIMUM_LOGS_PER_TIME_SPAN) {
+			console.warn(`Logging rate limit of ${MAXIMUM_LOGS_PER_TIME_SPAN} reached in timespan of ${MAXIMUM_LOGS_TIME_SPAN}ms`);
+			return false;
+		}
+		this._logHistory.push(now);
+
 		if (!this._shouldThrottle) {
 			return true;
 		}
 
-		const now = new Date().getTime();
 		const key = JSON.stringify(log);
 		const lastLogged = this._uniqueLogs.get(key);
 		if (lastLogged === undefined || now - lastLogged >= defaultThrottleRateMs) {
