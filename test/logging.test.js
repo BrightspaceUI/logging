@@ -807,7 +807,7 @@ describe('logging', () => {
 					fetchStub.withArgs(provisioningEndpoint).resolves({
 						json: () => Promise.resolve(entry.value)
 					});
-					logger.logBatch([{ message: '1' }, { message: '2' }, { message: '3' }]);
+					logger.logBatch(messages);
 					await aTimeout(0);
 					expect(fetchStub).to.have.been.calledOnce;
 					expect(consoleErrorStub).to.have.been.calledWith(
