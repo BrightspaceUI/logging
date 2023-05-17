@@ -1,6 +1,6 @@
 import { aTimeout, expect } from '@open-wc/testing';
 import { benignErrors, LogBuilder, LoggingClient, ServerLogger } from '../logging.js';
-import sinon from 'sinon';
+import { match, restore, spy, stub, useFakeTimers } from 'sinon';
 
 const defaultThrottleRateMs = 60000;
 let clock;
@@ -253,13 +253,13 @@ describe('logging', () => {
 
 				benignErrors.forEach((message) => {
 					it(`should not log benign legacy error "${message}"`, () => {
-						const stub = sinon.stub();
+						const batchStub = stub();
 						const client = new LoggingClient('my-app-id', {
-							logBatch: stub
+							logBatch: batchStub
 						});
 						client.legacyError(message, 'logging.js', 102, 23, new Error('An error occurred'), 'dev msg');
 						expect(client._uniqueLogs).to.be.empty;
-						expect(stub).to.not.have.been.called;
+						expect(batchStub).to.not.have.been.called;
 					});
 				});
 
@@ -305,7 +305,7 @@ describe('logging', () => {
 		describe('Throttling On', () => {
 
 			beforeEach(() => {
-				clock = sinon.useFakeTimers();
+				clock = useFakeTimers();
 			});
 			afterEach(() => {
 				clock.restore();
@@ -330,23 +330,23 @@ describe('logging', () => {
 				});
 
 				it('should log identical message only once per throttle rate', () => {
-					const stub = sinon.stub();
+					const logBatchStub = stub();
 					const mockLogger = {
-						logBatch: stub
+						logBatch: logBatchStub
 					};
 					const client = new LoggingClient('my-app-id', mockLogger, { shouldThrottle: true });
 					client.log('this is my message I want to log');
 					client.log('this is my message I want to log'); // Should not be logged
 
 					expect(client._uniqueLogs.size).to.equal(1);
-					expect(stub.calledOnce).to.be.true;
+					expect(logBatchStub.calledOnce).to.be.true;
 				});
 
 				it('should log identical message again after throttle rate has passed', () => {
 					let messageKey, timeValue;
-					const stub = sinon.stub();
+					const logBatchStub = stub();
 					const mockLogger = {
-						logBatch: stub
+						logBatch: logBatchStub
 					};
 					const client = new LoggingClient('my-app-id', mockLogger, { shouldThrottle: true });
 					client.log('this is my message I want to log');
@@ -362,7 +362,7 @@ describe('logging', () => {
 					expect(client._uniqueLogs.size).to.equal(1);
 					const newTime = client._uniqueLogs.get(messageKey);
 					expect(newTime).to.be.at.least(timeValue + defaultThrottleRateMs);
-					expect(stub.calledTwice).to.be.true;
+					expect(logBatchStub.calledTwice).to.be.true;
 				});
 
 				it('should throttle log message batch', () => {
@@ -377,16 +377,16 @@ describe('logging', () => {
 							expect(log.message).to.equal(message);
 						}
 					};
-					const spy = sinon.spy(checkLogs);
+					const logBatchSpy = spy(checkLogs);
 					const mockLogger = {
-						logBatch: spy
+						logBatch: logBatchSpy
 					};
 					const client = new LoggingClient('my-app-id', mockLogger, { shouldThrottle: true });
 					client.logBatch(messages);
 					client.logBatch(messages); // None of these should be logged
 
 					expect(client._uniqueLogs.size).to.equal(2);
-					expect(spy.calledOnce).to.be.true;
+					expect(logBatchSpy.calledOnce).to.be.true;
 				});
 
 			});
@@ -422,25 +422,25 @@ describe('logging', () => {
 				it('should log identical error only once per throttle rate', () => {
 					const error = new Error('An error occurred');
 					const message = 'My custom message to go along with it';
-					const stub = sinon.stub();
+					const logBatchStub = stub();
 					const mockLogger = {
-						logBatch: stub
+						logBatch: logBatchStub
 					};
 					const client = new LoggingClient('my-app-id', mockLogger, { shouldThrottle: true });
 					client.error(error, message);
 					client.error(error, message); // Should not be logged
 
 					expect(client._uniqueLogs.size).to.equal(1);
-					expect(stub.calledOnce).to.be.true;
+					expect(logBatchStub.calledOnce).to.be.true;
 				});
 
 				it('should log identical error again after throttle rate has passed', () => {
 					let messageKey, timeValue;
 					const error = new Error('An error occurred');
 					const message = 'My custom message to go along with it';
-					const stub = sinon.stub();
+					const logBatchStub = stub();
 					const mockLogger = {
-						logBatch: stub
+						logBatch: logBatchStub
 					};
 					const client = new LoggingClient('my-app-id', mockLogger, { shouldThrottle: true });
 					client.error(error, message);
@@ -456,7 +456,7 @@ describe('logging', () => {
 					expect(client._uniqueLogs.size).to.equal(1);
 					const newTime = client._uniqueLogs.get(messageKey);
 					expect(newTime).to.be.at.least(timeValue + defaultThrottleRateMs);
-					expect(stub.calledTwice).to.be.true;
+					expect(logBatchStub.calledTwice).to.be.true;
 				});
 
 				it('should throttle error batch', () => {
@@ -483,16 +483,16 @@ describe('logging', () => {
 							expect(log.error.stack).to.equal(error.stack);
 						}
 					};
-					const spy = sinon.spy(checkLogs);
+					const logBatchSpy = spy(checkLogs);
 					const mockLogger = {
-						logBatch: spy
+						logBatch: logBatchSpy
 					};
 					const client = new LoggingClient('my-app-id', mockLogger, { shouldThrottle: true });
 					client.errorBatch(errors);
 					client.errorBatch(errors); // None of these should be logged
 
 					expect(client._uniqueLogs.size).to.equal(2);
-					expect(spy.calledOnce).to.be.true;
+					expect(logBatchSpy.calledOnce).to.be.true;
 				});
 
 			});
@@ -541,16 +541,16 @@ describe('logging', () => {
 					const error = new Error('An error occurred');
 					const developerMessage = 'My custom message to go along with it';
 
-					const stub = sinon.stub();
+					const logBatchStub = stub();
 					const mockLogger = {
-						logBatch: stub
+						logBatch: logBatchStub
 					};
 					const client = new LoggingClient('my-app-id', mockLogger, { shouldThrottle: true });
 					client.legacyError(message, source, lineno, colno, error, developerMessage);
 					client.legacyError(message, source, lineno, colno, error, developerMessage); // Should not be logged
 
 					expect(client._uniqueLogs.size).to.equal(1);
-					expect(stub.calledOnce).to.be.true;
+					expect(logBatchStub.calledOnce).to.be.true;
 				});
 
 				it('should log identical legacy error again after throttle rate has passed', () => {
@@ -562,9 +562,9 @@ describe('logging', () => {
 					const error = new Error('An error occurred');
 					const developerMessage = 'My custom message to go along with it';
 
-					const stub = sinon.stub();
+					const logBatchStub = stub();
 					const mockLogger = {
-						logBatch: stub
+						logBatch: logBatchStub
 					};
 					const client = new LoggingClient('my-app-id', mockLogger, { shouldThrottle: true });
 					client.legacyError(message, source, lineno, colno, error, developerMessage);
@@ -580,7 +580,7 @@ describe('logging', () => {
 					expect(client._uniqueLogs.size).to.equal(1);
 					const newTime = client._uniqueLogs.get(messageKey);
 					expect(newTime).to.be.at.least(timeValue + defaultThrottleRateMs);
-					expect(stub.calledTwice).to.be.true;
+					expect(logBatchStub.calledTwice).to.be.true;
 				});
 
 				it('should throttle legacy error batch', () => {
@@ -611,16 +611,16 @@ describe('logging', () => {
 							expect(log.error.stack).to.equal(error.stack);
 						}
 					};
-					const spy = sinon.spy(checkLogs);
+					const logBatchSpy = spy(checkLogs);
 					const mockLogger = {
-						logBatch: spy
+						logBatch: logBatchSpy
 					};
 					const client = new LoggingClient('my-app-id', mockLogger, { shouldThrottle: true });
 					client.legacyErrorBatch(legacyErrors);
 					client.legacyErrorBatch(legacyErrors); // None of these should be logged
 
 					expect(client._uniqueLogs.size).to.equal(2);
-					expect(spy.calledOnce).to.be.true;
+					expect(logBatchSpy.calledOnce).to.be.true;
 				});
 			});
 
@@ -633,6 +633,7 @@ describe('logging', () => {
 		let batchTime;
 		let provisioningEndpoint;
 		let fetchStub;
+		let consoleErrorStub;
 
 		beforeEach(() => {
 
@@ -643,17 +644,17 @@ describe('logging', () => {
 			const htmlEle = document.getElementsByTagName('html')[0];
 			htmlEle.setAttribute('data-logging-endpoint', provisioningEndpoint);
 
-			fetchStub = sinon.stub(window, 'fetch');
+			fetchStub = stub(window, 'fetch');
 
 			let callCount = 0;
 			fetchStub.withArgs(provisioningEndpoint).resolves({
 				json: () => Promise.resolve({ Endpoint: `/test/endpoint/${callCount++}` })
 			});
+
+			consoleErrorStub = stub(console, 'error');
 		});
 
-		afterEach(() => {
-			fetchStub.restore();
-		});
+		afterEach(() => restore());
 
 		describe('batching', () => {
 
@@ -771,16 +772,61 @@ describe('logging', () => {
 
 		});
 
+		describe('endpoint errors', () => {
+
+			const messages = [{ message: '1' }, { message: '2' }, { message: '3' }];
+
+			it('should not log if html element is missing', async() => {
+				stub(document, 'getElementsByTagName').withArgs('html').returns([]);
+				logger.logBatch(messages);
+				await aTimeout(0);
+				expect(fetchStub).to.not.have.been.called;
+				expect(consoleErrorStub).to.have.been.calledWith(
+					match.has('message', 'Failed to locate top-level HTML element for data-logging-endpoint'),
+					messages
+				);
+			});
+
+			it('should not log if endpoint is missing from html element', async() => {
+				document.getElementsByTagName('html')[0].removeAttribute('data-logging-endpoint');
+				logger.logBatch(messages);
+				await aTimeout(0);
+				expect(fetchStub).to.not.have.been.called;
+				expect(consoleErrorStub).to.have.been.calledWith(
+					match.has('message', 'Missing data-logging-endpoint attribute on top-level HTML element'),
+					messages
+				);
+			});
+
+			[
+				{ name: 'undefined', value: undefined },
+				{ name: 'not a string', value: { Endpoint: true } },
+				{ name: 'empty string', value: { Endpoint: '' } }
+			].forEach((entry) => {
+				it(`should not log if endpoint is: ${entry.name}`, async() => {
+					fetchStub.withArgs(provisioningEndpoint).resolves({
+						json: () => Promise.resolve(entry.value)
+					});
+					logger.logBatch(messages);
+					await aTimeout(0);
+					expect(fetchStub).to.have.been.calledOnce;
+					expect(consoleErrorStub).to.have.been.calledWith(
+						match.has('message', 'Logging endpoint missing or empty, logging is disabled'),
+						messages
+					);
+				});
+			});
+
+		});
+
 		describe('unload', () => {
 			let beaconStub;
 
 			beforeEach(() => {
-				beaconStub = sinon.stub(navigator, 'sendBeacon');
+				beaconStub = stub(navigator, 'sendBeacon');
 			});
 
-			afterEach(() => {
-				beaconStub.restore();
-			});
+			afterEach(() => restore());
 
 			it('should send remaining logs as beacon on unload', async() => {
 
