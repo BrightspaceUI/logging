@@ -242,14 +242,9 @@ export class LoggingClient {
 		const now = Date.now();
 
 		// rate limit number of errors to 100 per minute
-		let sliceIndex = this._logTimestamps.length;
-		for (let i = 0; i < this._logTimestamps.length; i++) {
-			if (this._logTimestamps[i] >= (now - MAXIMUM_LOGS_TIME_SPAN)) {
-				sliceIndex = i;
-				break;
-			}
+		while (this._logTimestamps.length > 0 && this._logTimestamps[0] < (now - MAXIMUM_LOGS_TIME_SPAN)) {
+			this._logTimestamps.shift();
 		}
-		this._logTimestamps = this._logTimestamps.slice(sliceIndex);
 		if (this._logTimestamps.length >= MAXIMUM_LOGS_PER_TIME_SPAN) {
 			console.warn(`Logging rate limit of ${MAXIMUM_LOGS_PER_TIME_SPAN} reached in timespan of ${MAXIMUM_LOGS_TIME_SPAN}ms`);
 			return false;
