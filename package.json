@@ -1,6 +1,6 @@
 {
   "name": "@brightspace-ui/logging",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "description": "JavaScript client for sending logs to the Brightspace Logging service.",
   "repository": "https://github.com/BrightspaceUI/logging.git",
   "publishConfig": {
