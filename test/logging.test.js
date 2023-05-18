@@ -1,5 +1,5 @@
 import { aTimeout, expect } from '@open-wc/testing';
-import { benignErrors, LogBuilder, LoggingClient, ServerLogger } from '../logging.js';
+import { benignErrors, LogBuilder, LoggingClient, MAXIMUM_LOGS_PER_TIME_SPAN, MAXIMUM_LOGS_TIME_SPAN, ServerLogger } from '../logging.js';
 import { match, restore, spy, stub, useFakeTimers } from 'sinon';
 
 const defaultThrottleRateMs = 60000;
@@ -625,6 +625,49 @@ describe('logging', () => {
 			});
 
 		});
+
+		describe('Rate Limiting', () => {
+
+			let client, clock, consoleWarnStub, logger;
+
+			beforeEach(() => {
+				clock = useFakeTimers();
+				consoleWarnStub = stub(console, 'warn');
+				logger = {
+					logBatch: stub()
+				};
+				client = new LoggingClient('my-app-id', logger);
+			});
+
+			afterEach(() => {
+				clock.restore();
+				restore();
+			});
+
+			function logNumTimes(num) {
+				Array.from(Array(num).keys()).forEach((val) => client.log(`message ${val}`));
+			}
+
+			it('should log up to the maximum', async() => {
+				logNumTimes(MAXIMUM_LOGS_PER_TIME_SPAN);
+				expect(logger.logBatch).to.have.callCount(MAXIMUM_LOGS_PER_TIME_SPAN);
+			});
+
+			it('should stop logging at the maximum', async() => {
+				logNumTimes(MAXIMUM_LOGS_PER_TIME_SPAN + 1);
+				expect(consoleWarnStub).to.have.been.calledWith(`Logging rate limit of ${MAXIMUM_LOGS_PER_TIME_SPAN} reached in timespan of ${MAXIMUM_LOGS_TIME_SPAN}ms`);
+				expect(logger.logBatch).to.have.callCount(MAXIMUM_LOGS_PER_TIME_SPAN);
+			});
+
+			it('should start logging again after time span has elapsed', async() => {
+				logNumTimes(MAXIMUM_LOGS_PER_TIME_SPAN);
+				clock.tick(MAXIMUM_LOGS_TIME_SPAN + 1);
+				client.log(`message ${MAXIMUM_LOGS_PER_TIME_SPAN + 1}`);
+				expect(logger.logBatch).to.have.callCount(MAXIMUM_LOGS_PER_TIME_SPAN + 1);
+			});
+
+		});
+
 	});
 
 	describe('ServerLogger', () => {
