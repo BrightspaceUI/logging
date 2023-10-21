@@ -40,7 +40,7 @@ export class ServerLogger {
 		let options = {
 			method: 'POST',
 			mode: 'cors',
-			headers: { 'Content-Type': 'application/json' },
+			headers: { 'Content-Type': 'application/json', 'foo': 'bar' },
 			body: JSON.stringify(logs)
 		};
 		try {
