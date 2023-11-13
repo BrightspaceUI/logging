@@ -12,31 +12,29 @@ To install from NPM:
 npm install @brightspace-ui/logging
 ```
 
-## Developing, Testing and Contributing
+## Developing and Contributing
 
 After cloning the repo, run `npm install` to install dependencies.
 
-### Linting
+### Testing
+
+To run the full suite of tests:
+
+```shell
+npm test
+```
+
+Alternatively, tests can be selectively run:
 
 ```shell
 # eslint
-npm run lint
+npm run lint:eslint
+
+# unit tests
+npm run test:unit
 ```
 
-### Testing
-
-```shell
-# lint & run headless unit tests
-npm test
-
-# unit tests only
-npm run test:headless
-
-# debug or run a subset of local unit tests
-npm run test:headless:watch
-```
-
-## Versioning & Releasing
+### Versioning and Releasing
 
 This repo is configured to use `semantic-release`. Commits prefixed with `fix:` and `feat:` will trigger patch and minor releases when merged to `main`.
 
