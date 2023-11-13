@@ -1,4 +1,4 @@
-import { aTimeout, expect } from '@open-wc/testing';
+import { aTimeout, expect } from '@brightspace-ui/testing';
 import { benignErrors, LogBuilder, LoggingClient, MAXIMUM_LOGS_PER_TIME_SPAN, MAXIMUM_LOGS_TIME_SPAN, ServerLogger } from '../logging.js';
 import { match, restore, spy, stub, useFakeTimers } from 'sinon';
 
