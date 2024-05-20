@@ -20,6 +20,6 @@
     "@brightspace-ui/testing": "^1",
     "eslint": "^8",
     "eslint-config-brightspace": "^1.0",
-    "sinon": "^17"
+    "sinon": "^18"
   }
 }
