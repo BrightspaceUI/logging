@@ -19,7 +19,7 @@
     "@babel/core": "^7",
     "@brightspace-ui/testing": "^1",
     "eslint": "^8",
-    "eslint-config-brightspace": "^1.0",
+    "eslint-config-brightspace": "^2.0",
     "sinon": "^19"
   }
 }
