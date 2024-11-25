@@ -18,8 +18,8 @@
   "devDependencies": {
     "@babel/core": "^7",
     "@brightspace-ui/testing": "^1",
-    "eslint": "^8",
-    "eslint-config-brightspace": "^1.0",
+    "eslint": "^9",
+    "eslint-config-brightspace": "^2",
     "sinon": "^19"
   }
 }
