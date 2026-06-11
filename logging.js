@@ -16,7 +16,8 @@ export class ServerLogger {
 		this._batchSize = batchSize;
 		this._batchTime = batchTime;
 		this._logs = [];
-		window.addEventListener('unload', this._onUnload.bind(this));
+		this._onPageHide = this._onPageHide.bind(this);
+		window.addEventListener('pagehide', this._onPageHide);
 	}
 
 	logBatch(logs) {
@@ -34,6 +35,11 @@ export class ServerLogger {
 				this._logs = [];
 			}, this._batchTime);
 		}
+	}
+
+	_disconnectForTesting() {
+		window.removeEventListener('pagehide', this._onPageHide);
+		clearTimeout(this._batchTimeout);
 	}
 
 	async _log(logs) {
@@ -58,19 +64,17 @@ export class ServerLogger {
 		}
 	}
 
-	async _onUnload() {
+	async _onPageHide() {
 		clearTimeout(this._batchTimeout);
-		if (!this._loggerPromise && !navigator || !navigator.sendBeacon) {
+		if (!this._loggerPromise || !navigator?.sendBeacon || this._logs.length === 0) {
 			return;
 		}
-		if (this._logs.length > 0) {
-			try {
-				const logger = await this._loggerPromise;
-				const data = JSON.stringify(this._logs);
-				navigator.sendBeacon(logger.Endpoint, data);
-			} catch (err) {
-				console.error(err, this._logs);
-			}
+		try {
+			const logger = await this._loggerPromise;
+			const data = JSON.stringify(this._logs);
+			navigator.sendBeacon(logger.Endpoint, data);
+		} catch (err) {
+			console.error(err, this._logs);
 		}
 	}
 
