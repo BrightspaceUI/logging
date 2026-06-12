@@ -697,7 +697,10 @@ describe('logging', () => {
 			consoleErrorStub = stub(console, 'error');
 		});
 
-		afterEach(() => restore());
+		afterEach(() => {
+			restore();
+			logger._disconnectForTesting();
+		});
 
 		describe('batching', () => {
 
@@ -862,28 +865,43 @@ describe('logging', () => {
 
 		});
 
-		describe('unload', () => {
+		describe('pagehide', () => {
 			let beaconStub;
-
 			beforeEach(() => {
 				beaconStub = stub(navigator, 'sendBeacon');
 			});
 
 			afterEach(() => restore());
 
-			it('should send remaining logs as beacon on unload', async() => {
-
+			it('should send remaining logs as beacon when "pagehide" event is triggered', async() => {
 				logger.logBatch([{ message: '1' }, { message: '2' }]);
 
-				window.dispatchEvent(new Event('unload'));
+				window.dispatchEvent(new Event('pagehide'));
 
 				await aTimeout(0);
 
-				expect(beaconStub).to.have.been.calledOnce;
+				expect(beaconStub.calledOnce).to.be.true;
 				const [endpoint, data] = beaconStub.getCall(0).args;
 
 				expect(endpoint).to.equal('/test/endpoint/0');
 				expect(data).to.equal(JSON.stringify([{ message: '1' }, { message: '2' }]));
+			});
+
+			it('should not send anything as beacon if no logs have ever been sent', async() => {
+				window.dispatchEvent(new Event('pagehide'));
+				await aTimeout(0);
+
+				expect(beaconStub.called).to.be.false;
+			});
+
+			it('should not send anything as beacon if there are no logs', async() => {
+				logger.logBatch([{ message: '1' }]);
+				await aTimeout(batchTime);
+
+				window.dispatchEvent(new Event('pagehide'));
+				await aTimeout(0);
+
+				expect(beaconStub.called).to.be.false;
 			});
 
 		});
